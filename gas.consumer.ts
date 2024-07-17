@@ -2,12 +2,12 @@ import * as amqp from "amqplib/callback_api";
 const socketIoClient = require("socket.io-client");
 import { Socket } from "socket.io-client";
 
-const USERNAME = "protectify"
-const PASSWORD = encodeURIComponent("Contraseña")
-const HOSTNAME = "IP"
-const PORT = 5672
-const RABBITMQ_QUEUE_DATA = "gas";
-const WEBSOCKET_SERVER_URL = "url del ws server";
+const USERNAME = "username";
+const PASSWORD = encodeURIComponent("password");
+const HOSTNAME = "hostname";
+const PORT = 5672;
+const RABBITMQ_QUEUE_DATA = "queue_name";
+const WEBSOCKET_SERVER_URL = "ws_server_url";
 
 let socketIO: Socket;
 
@@ -16,16 +16,16 @@ async function connect() {
     amqp.connect(`amqp://${USERNAME}:${PASSWORD}@${HOSTNAME}:${PORT}`, (err: any, conn: amqp.Connection) => {
       if (err) throw new Error(err);
 
-      conn.createChannel((errChanel: any, channel: amqp.Channel) => {
-        if (errChanel) throw new Error(errChanel);
+      conn.createChannel((errChannel: any, channel: amqp.Channel) => {
+        if (errChannel) throw new Error(errChannel);
 
-        channel.assertQueue(RABBITMQ_QUEUE_DATA, {durable:true, arguments:{"x-queue-type":"quorum"}});
+        channel.assertQueue(RABBITMQ_QUEUE_DATA, { durable: true, arguments: { "x-queue-type": "quorum" } });
 
         channel.consume(RABBITMQ_QUEUE_DATA, (data: amqp.Message | null) => {
           if (data?.content !== undefined) {
             const parsedContent = JSON.parse(data.content.toString());
-            console.log("Datos de gas:", parsedContent);
-            socketIO.emit("gasData", parsedContent);
+            console.log(`Datos de ${RABBITMQ_QUEUE_DATA}`, parsedContent);
+            socketIO.emit("event_name", parsedContent);
             channel.ack(data);
           }
         });
@@ -34,7 +34,7 @@ async function connect() {
       });
     });
   } catch (err: any) {
-    throw new Error(err);
+    console.error('Conection error', err);
   }
 }
 
